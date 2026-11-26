@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Универ-Трекер — Посещаемость, Баллы и ДЗ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      line-height: 1.5;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .card-clickable {
+      cursor: pointer;
+    }
+    .card-clickable:hover {
+      border-color: #93c5fd;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #f1f5f9; color: #334155; border-color: #e2e8f0; }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-success { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .btn-success:hover { background: #bbf7d0; }
+    .btn-danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-warning { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .btn-warning:hover { background: #fde68a; }
+    .input, .select, .textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 14px;
+      background: #fff;
+      color: #0f172a;
+      outline: none;
+    }
+    .input:focus, .select:focus, .textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+    .modal-box {
+      background: #fff;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+    }
+    .hidden { display: none !important; }
+    .tab-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .tab-btn {
+      padding: 9px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #475569;
+    }
+    .tab-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .tab-btn:not(.active):hover {
+      background: #e2e8f0;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #cbd5e1;
+      transition: .2s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #2563eb; }
+    input:checked + .slider:before { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+  <div class="max-w-5xl mx-auto px-4 py-6">
+    <!-- Шапка -->
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Универ-Трекер</h1>
+        <p class="text-sm text-slate-500">Посещаемость, баллы БРС и домашние задания</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn btn-primary" onclick="openSubjectModal()">+ Предмет</button>
+        <button class="btn btn-secondary" onclick="openHwModal()">+ ДЗ</button>
+      </div>
+    </header>
+
+    <!-- Навигация -->
+    <nav class="tab-bar mb-6" id="nav-tabs">
+      <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">Обзор</button>
+      <button class="tab-btn" data-tab="subjects" onclick="switchTab('subjects')">Предметы</button>
+      <button class="tab-btn" data-tab="attendance" onclick="switchTab('attendance')">Посещаемость</button>
+      <button class="tab-btn" data-tab="homework" onclick="switchTab('homework')">ДЗ и Дедлайны</button>
+      <button class="tab-btn" data-tab="tools" onclick="switchTab('tools')">Инструменты</button>
+    </nav>
+
+    <!-- Контент вкладок -->
+    <main id="app-content"></main>
+  </div>
+
+  <!-- Модальное окно: Редактирование / Добавление предмета -->
+  <div id="modal-subject" class="modal-backdrop hidden" onclick="closeModalOnBackdrop(event, 'modal-subject')">
+    <div class="modal-box">
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="subject-modal-title" class="text-lg font-bold">Новый предмет</h2>
+        <button class="btn btn-secondary" style="padding:4px 10px;" onclick="closeModal('modal-subject')">✕</button>
+      </div>
+      <form id="form-subject" onsubmit="saveSubject(event)" class="space-y-4">
+        <input type="hidden" id="subj-id" />
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Название предмета *</label>
+          <input type="text" id="subj-name" class="input" placeholder="Например: Физическая культура" required />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Преподаватель / Аудитория</label>
+            <input type="text" id="subj-teacher" class="input" placeholder="Иванов И.И. / Спортзал" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Лимит пропусков (до недопуска)</label>
+            <input type="number" id="subj-max-absences" class="input" min="1" value="3" />
+          </div>
+        </div>
+
+        <!-- Переключатель учёта баллов -->
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+          <div>
+            <div class="text-sm font-semibold text-slate-800">Вести учёт баллов (БРС)</div>
+            <div class="text-xs text-slate-500">Включи, если по предмету нужно копить баллы за семестр или курсы</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="subj-track-points" onchange="togglePointsFields()" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Поля баллов (скрываются, если учёт выключен) -->
+        <div id="points-fields-wrapper" class="space-y-3 p-3.5 rounded-xl bg-blue-50/60 border border-blue-100 hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Баллов в этом семестре</label>
+              <input type="number" step="0.5" id="subj-sem-current" class="input" value="0" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Цель на семестр</label>
+              <input type="number" step="0.5" id="subj-sem-goal" class="input" value="50" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Всего накоплено (за курсы)</label>
+              <input type="number" step="0.5" id="subj-total-current" class="input" value="0" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Общая цель (за все курсы)</label>
+              <input type="number" step="0.5" id="subj-total-goal" class="input" value="300" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Баллов за 1 посещение (автоначисление)</label>
+            <input type="number" step="0.5" id="subj-points-per-visit" class="input" value="2" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2">
+          <button type="button" id="btn-delete-subject" class="btn btn-danger hidden" onclick="deleteCurrentSubject()">Удалить предмет</button>
+          <div class="flex gap-2 ml-auto">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-subject')">Отмена</button>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Модальное окно: Быстрое начисление/списание баллов -->
+  <div id="modal-points" class="modal-backdrop hidden" onclick="closeModalOnBackdrop(event, 'modal-points')">
+    <div class="modal-box">
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="points-modal-title" class="text-lg font-bold">Изменить баллы</h2>
+        <button class="btn btn-secondary" style="padding:4px 10px;" onclick="closeModal('modal-points')">✕</button>
+      </div>
+      <form onsubmit="submitPointsChange(event)" class="space-y-4">
+        <input type="hidden" id="pts-subj-id" />
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Количество баллов (можно с минусом, напр. -5)</label>
+          <input type="number" step="0.5" id="pts-amount" class="input" placeholder="Например: 2 или 5" required />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">За что начислено (комментарий)</label>
+          <input type="text" id="pts-note" class="input" placeholder="Например: Пара по физре / Сдача норматива" />
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="pts-sync-total" checked class="w-4 h-4 accent-blue-600" />
+          <label for="pts-sync-total" class="text-sm text-slate-700">Также прибавить к общему итогу за все курсы</label>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-points')">Отмена</button>
+          <button type="submit" class="btn btn-primary">Применить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Модальное окно: Новое ДЗ -->
+  <div id="modal-hw" class="modal-backdrop hidden" onclick="closeModalOnBackdrop(event, 'modal-hw')">
+    <div class="modal-box">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold">Новое домашнее задание</h2>
+        <button class="btn btn-secondary" style="padding:4px 10px;" onclick="closeModal('modal-hw')">✕</button>
+      </div>
+      <form onsubmit="saveHomework(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Предмет *</label>
+          <select id="hw-subj-id" class="select" required></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Что нужно сделать *</label>
+          <input type="text" id="hw-title" class="input" placeholder="Например: Подготовить доклад по семинару" required />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Дедлайн</label>
+            <input type="date" id="hw-deadline" class="input" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Приоритет</label>
+            <select id="hw-priority" class="select">
+              <option value="normal">Обычный</option>
+              <option value="high">Высокий (срочно)</option>
+              <option value="low">Низкий</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Заметки / Подзадачи (каждая с новой строки)</label>
+          <textarea id="hw-notes" class="textarea" rows="3" placeholder="Найти источники
+Сделать презентацию"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-hw')">Отмена</button>
+          <button type="submit" class="btn btn-primary">Добавить ДЗ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'univer_tracker_v2';
+
+    const DEFAULT_DATA = {
+      subjects: [
+        {
+          id: 'subj-pe',
+          name: 'Физическая культура',
+          teacher: 'Спорткомплекс',
+          maxAbsences: 4,
+          trackPoints: true,
+          semCurrent: 18,
+          semGoal: 50,
+          totalCurrent: 68,
+          totalGoal: 300,
+          pointsPerVisit: 2,
+          pointsLog: [
+            { date: '2026-11-18', amount: 2, note: 'Посещение занятия' },
+            { date: '2026-11-21', amount: 4, note: 'Сдача норматива + пара' }
+          ]
+        },
+        {
+          id: 'subj-hist',
+          name: 'История России',
+          teacher: 'Ауд. 304',
+          maxAbsences: 3,
+          trackPoints: false,
+          semCurrent: 0,
+          semGoal: 100,
+          totalCurrent: 0,
+          totalGoal: 100,
+          pointsPerVisit: 0,
+          pointsLog: []
+        },
+        {
+          id: 'subj-lang',
+          name: 'Иностранный язык',
+          teacher: 'Ауд. 215',
+          maxAbsences: 3,
+          trackPoints: false,
+          semCurrent: 0,
+          semGoal: 100,
+          totalCurrent: 0,
+          totalGoal: 100,
+          pointsPerVisit: 0,
+          pointsLog: []
+        },
+        {
+          id: 'subj-econ',
+          name: 'Экономика',
+          teacher: 'Ауд. 412',
+          maxAbsences: 3,
+          trackPoints: false,
+          semCurrent: 0,
+          semGoal: 100,
+          totalCurrent: 0,
+          totalGoal: 100,
+          pointsPerVisit: 0,
+          pointsLog: []
+        }
+      ],
+      attendance: [
+        { id: 'att-1', subjectId: 'subj-pe', date: '2026-11-21', status: 'present' },
+        { id: 'att-2', subjectId: 'subj-hist', date: '2026-11-20', status: 'present' },
+        { id: 'att-3', subjectId: 'subj-lang', date: '2026-11-19', status: 'absent' }
+      ],
+      homework: [
+        {
+          id: 'hw-1',
+          subjectId: 'subj-hist',
+          title: 'Подготовить выступление на семинар',
+          deadline: '2026-11-30',
+          priority: 'high',
+          done: false,
+          subtasks: [
+            { text: 'Прочитать главу из учебника', done: true },
+            { text: 'Выписать основные тезисы', done: false }
+          ]
+        }
+      ],
+      notes: 'Портал СДО: https://sdo.university.ru\nРасписание звонков:\n1 пара: 09:00 – 10:30\n2 пара: 10:40 – 12:10\n3 пара: 12:50 – 14:20'
+    };
+
+    let state = loadState();
+    let currentTab = 'dashboard';
+    let hwFilter = 'active';
+    let attFilterSubject = 'all';
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('univer_tracker_v1');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.subjects)) {
+            parsed.subjects = parsed.subjects.map(s => ({
+              trackPoints: false,
+              semCurrent: 0,
+              semGoal: 50,
+              totalCurrent: 0,
+              totalGoal: 300,
+              pointsPerVisit: 2,
+              pointsLog: [],
+              ...s
+            }));
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.error('Ошибка чтения хранилища:', e);
+      }
+      return JSON.parse(JSON.stringify(DEFAULT_DATA));
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        alert('Не удалось сохранить данные в память браузера.');
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+      });
+      render();
+    }
+
+    function getSubjectStats(subjId) {
+      const records = state.attendance.filter(a => a.subjectId === subjId);
+      const present = records.filter(a => a.status === 'present').length;
+      const late = records.filter(a => a.status === 'late').length;
+      const absent = records.filter(a => a.status === 'absent').length;
+      const excused = records.filter(a => a.status === 'excused').length;
+      const total = records.length;
+      const percent = total > 0 ? Math.round(((present + late) / total) * 100) : 100;
+      return { present, late, absent, excused, total, percent };
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"');
+    }
+
+    // --- Рендер главного экрана ---
+    function render() {
+      const container = document.getElementById('app-content');
+      if (currentTab === 'dashboard') renderDashboard(container);
+      else if (currentTab === 'subjects') renderSubjects(container);
+      else if (currentTab === 'attendance') renderAttendance(container);
+      else if (currentTab === 'homework') renderHomework(container);
+      else if (currentTab === 'tools') renderTools(container);
+    }
+
+    function renderDashboard(container) {
+      const totalAtt = state.attendance.length;
+      const goodAtt = state.attendance.filter(a => a.status === 'present' || a.status === 'late').length;
+      const overallAttPercent = totalAtt > 0 ? Math.round((goodAtt / totalAtt) * 100) : 100;
+      const activeHwCount = state.homework.filter(h => !h.done).length;
+      const pointsSubjects = state.subjects.filter(s => s.trackPoints);
+
+      // Предупреждения по пропускам
+      const dangerSubjects = state.subjects.filter(s => {
+        const st = getSubjectStats(s.id);
+        return s.maxAbsences > 0 && (s.maxAbsences - st.absent) <= 1;
+      });
+
+      let html = `
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div class="card">
+            <div class="text-xs font-semibold text-slate-500 uppercase">Общая посещаемость</div>
+            <div class="text-3xl font-bold text-slate-900 mt-1">${overallAttPercent}%</div>
+            <div class="text-xs text-slate-500 mt-1">Посещено ${goodAtt} из ${totalAtt} отмеченных пар</div>
+          </div>
+          <div class="card">
+            <div class="text-xs font-semibold text-slate-500 uppercase">Активные ДЗ</div>
+            <div class="text-3xl font-bold text-blue-600 mt-1">${activeHwCount}</div>
+            <div class="text-xs text-slate-500 mt-1">Нажми «+ ДЗ», чтобы добавить задание</div>
+          </div>
+          <div class="card">
+            <div class="text-xs font-semibold text-slate-500 uppercase">Предметов в семестре</div>
+            <div class="text-3xl font-bold text-slate-900 mt-1">${state.subjects.length}</div>
+            <div class="text-xs text-slate-500 mt-1">С учётом баллов: ${pointsSubjects.length}</div>
+          </div>
+        </div>
+      `;
+
+      if (dangerSubjects.length > 0) {
+        html += `
+          <div class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">
+            <strong>Внимание по пропускам:</strong> близко к лимиту по предметам —
+            ${dangerSubjects.map(s => {
+              const left = Math.max(0, s.maxAbsences - getSubjectStats(s.id).absent);
+              return `<span class="underline font-semibold cursor-pointer" onclick="openSubjectModal('${s.id}')">${escapeHtml(s.name)}</span> (осталось ${left})`;
+            }).join(', ')}.
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold text-slate-900">Мои предметы</h2>
+          <span class="text-xs text-slate-500">Нажми на любую карточку, чтобы изменить предмет</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      `;
+
+      state.subjects.forEach(subj => {
+        html += renderSubjectCardHtml(subj);
+      });
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function renderSubjectCardHtml(subj) {
+      const st = getSubjectStats(subj.id);
+      const absencesLeft = Math.max(0, subj.maxAbsences - st.absent);
+      const absenceBadgeClass = absencesLeft === 0 ? 'bg-red-100 text-red-700' : (absencesLeft === 1 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700');
+
+      let pointsBlock = '';
+      if (subj.trackPoints) {
+        const semRem = Math.max(0, subj.semGoal - subj.semCurrent);
+        const totalRem = Math.max(0, subj.totalGoal - subj.totalCurrent);
+        const semPct = subj.semGoal > 0 ? Math.min(100, Math.round((subj.semCurrent / subj.semGoal) * 100)) : 0;
+        const totalPct = subj.totalGoal > 0 ? Math.min(100, Math.round((subj.totalCurrent / subj.totalGoal) * 100)) : 0;
+
+        pointsBlock = `
+          <div class="mt-4 pt-3 border-t border-slate-100 space-y-3">
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-1">
+                <span class="text-slate-700">Семестр: ${subj.semCurrent} / ${subj.semGoal} б.</span>
+                <span class="text-blue-600">Осталось: ${semRem}</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill bg-blue-600" style="width:${semPct}%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-1">
+                <span class="text-slate-700">За все курсы: ${subj.totalCurrent} / ${subj.totalGoal} б.</span>
+                <span class="text-emerald-600">Осталось: ${totalRem}</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill bg-emerald-500" style="width:${totalPct}%"></div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-1.5 pt-1" onclick="event.stopPropagation()">
+              <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="quickAddPoints('${subj.id}', 1)">+1</button>
+              <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="quickAddPoints('${subj.id}', 2)">+2</button>
+              <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="quickAddPoints('${subj.id}', 5)">+5</button>
+              <button class="btn btn-primary" style="padding:5px 10px;font-size:12px;" onclick="openPointsModal('${subj.id}')">± Баллы</button>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="card card-clickable flex flex-col justify-between" onclick="openSubjectModal('${subj.id}')">
+          <div>
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h3 class="font-bold text-base text-slate-900">${escapeHtml(subj.name)}</h3>
+                ${subj.teacher ? `<p class="text-xs text-slate-500 mt-0.5">${escapeHtml(subj.teacher)}</p>` : ''}
+              </div>
+              <span class="badge ${absenceBadgeClass}">
+                Пропуски: ${st.absent}/${subj.maxAbsences} (ост. ${absencesLeft})
+              </span>
+            </div>
+
+            <div class="mt-3 flex items-center gap-3 text-xs text-slate-600">
+              <span>Посещаемость: <strong>${st.percent}%</strong> (${st.present + st.late} пар)</span>
+            </div>
+
+            ${pointsBlock}
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2" onclick="event.stopPropagation()">
+            <span class="text-xs text-slate-400">Отметить сегодня:</span>
+            <div class="flex gap-1.5">
+              <button class="btn btn-success" style="padding:5px 10px;font-size:12px;" onclick="quickMarkAttendance('${subj.id}', 'present')">✓ Был(а)</button>
+              <button class="btn btn-danger" style="padding:5px 10px;font-size:12px;" onclick="quickMarkAttendance('${subj.id}', 'absent')">✕ Пропуск</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSubjects(container) {
+      let html = `
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Все предметы</h2>
+            <p class="text-xs text-slate-500">Нажми на предмет, чтобы изменить цели, лимит пропусков или включить баллы</p>
+          </div>
+          <button class="btn btn-primary" onclick="openSubjectModal()">+ Добавить предмет</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      `;
+      state.subjects.forEach(s => {
+        html += renderSubjectCardHtml(s);
+      });
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function renderAttendance(container) {
+      const today = new Date().toISOString().split('T')[0];
+      const filteredRecords = state.attendance
+        .filter(a => attFilterSubject === 'all' || a.subjectId === attFilterSubject)
+        .sort((a, b) => b.date.localeCompare(a.date));
+
+      let html = `
+        <div class="card mb-6">
+          <h2 class="text-base font-bold mb-3">Отметить посещение за дату</h2>
+          <form onsubmit="addAttendanceRecord(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <select id="att-subj" class="select" required>
+              ${state.subjects.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')}
+            </select>
+            <input type="date" id="att-date" class="input" value="${today}" required />
+            <select id="att-status" class="select">
+              <option value="present">✓ Был(а) на паре</option>
+              <option value="absent">✕ Пропуск (неуваж.)</option>
+              <option value="excused">📄 Уваж. причина</option>
+              <option value="late">⏰ Опоздал(а)</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Записать</button>
+          </form>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 class="text-base font-bold">История посещаемости</h3>
+          <select class="select" style="width:auto;" onchange="attFilterSubject=this.value; render();">
+            <option value="all" ${attFilterSubject === 'all' ? 'selected' : ''}>Все предметы</option>
+            ${state.subjects.map(s => `<option value="${s.id}" ${attFilterSubject === s.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="space-y-2">
+      `;
+
+      if (filteredRecords.length === 0) {
+        html += `<div class="card text-sm text-slate-500 text-center">Записей пока нет.</div>`;
+      } else {
+        const statusMap = {
+          present: { label: 'Был(а)', cls: 'bg-emerald-100 text-emerald-800' },
+          absent: { label: 'Пропуск', cls: 'bg-red-100 text-red-800' },
+          excused: { label: 'Уваж. причина', cls: 'bg-blue-100 text-blue-800' },
+          late: { label: 'Опоздал(а)', cls: 'bg-amber-100 text-amber-800' }
+        };
+        filteredRecords.forEach(rec => {
+          const subj = state.subjects.find(s => s.id === rec.subjectId);
+          const stInfo = statusMap[rec.status] || statusMap.present;
+          html += `
+            <div class="card py-3 px-4 flex items-center justify-between gap-3">
+              <div>
+                <div class="font-semibold text-sm text-slate-900">${subj ? escapeHtml(subj.name) : 'Удалённый предмет'}</div>
+                <div class="text-xs text-slate-500">${rec.date}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge ${stInfo.cls}">${stInfo.label}</span>
+                <button class="btn btn-secondary" style="padding:4px 8px;font-size:12px;" onclick="deleteAttendance('${rec.id}')">✕</button>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function renderHomework(container) {
+      const list = state.homework.filter(h => (hwFilter === 'active' ? !h.done : h.done));
+
+      let html = `
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div class="flex gap-2">
+            <button class="btn ${hwFilter === 'active' ? 'btn-primary' : 'btn-secondary'}" onclick="hwFilter='active'; render();">Активные (${state.homework.filter(h => !h.done).length})</button>
+            <button class="btn ${hwFilter === 'done' ? 'btn-primary' : 'btn-secondary'}" onclick="hwFilter='done'; render();">Выполненные (${state.homework.filter(h => h.done).length})</button>
+          </div>
+          <button class="btn btn-primary" onclick="openHwModal()">+ Новое ДЗ</button>
+        </div>
+        <div class="space-y-3">
+      `;
+
+      if (list.length === 0) {
+        html += `<div class="card text-sm text-slate-500 text-center">В этом списке пока пусто.</div>`;
+      } else {
+        list.forEach(hw => {
+          const subj = state.subjects.find(s => s.id === hw.subjectId);
+          const prioBadge = hw.priority === 'high'
+            ? '<span class="badge bg-red-100 text-red-700">Срочно</span>'
+            : (hw.priority === 'low' ? '<span class="badge bg-slate-100 text-slate-600">Не срочно</span>' : '');
+
+          let subtasksHtml = '';
+          if (hw.subtasks && hw.subtasks.length > 0) {
+            subtasksHtml = `<div class="mt-3 space-y-1.5 pl-2 border-l-2 border-slate-200">` +
+              hw.subtasks.map((st, idx) => `
+                <label class="flex items-center gap-2 text-xs cursor-pointer ${st.done ? 'line-through text-slate-400' : 'text-slate-700'}">
+                  <input type="checkbox" ${st.done ? 'checked' : ''} onchange="toggleSubtask('${hw.id}', ${idx})" class="accent-blue-600" />
+                  <span>${escapeHtml(st.text)}</span>
+                </label>
+              `).join('') + `</div>`;
+          }
+
+          html += `
+            <div class="card">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                  <input type="checkbox" ${hw.done ? 'checked' : ''} onchange="toggleHwDone('${hw.id}')" class="mt-1 w-4 h-4 accent-blue-600 cursor-pointer" />
+                  <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="text-xs font-semibold text-blue-600">${subj ? escapeHtml(subj.name) : 'Предмет'}</span>
+                      ${prioBadge}
+                      ${hw.deadline ? `<span class="text-xs text-slate-500">до ${hw.deadline}</span>` : ''}
+                    </div>
+                    <div class="font-semibold text-sm mt-1 ${hw.done ? 'line-through text-slate-400' : 'text-slate-900'}">${escapeHtml(hw.title)}</div>
+                    ${subtasksHtml}
+                  </div>
+                </div>
+                <button class="btn btn-secondary" style="padding:4px 8px;font-size:12px;" onclick="deleteHw('${hw.id}')">✕</button>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function renderTools(container) {
+      const pointsSubjects = state.subjects.filter(s => s.trackPoints);
+      const calcOptions = pointsSubjects.length > 0
+        ? pointsSubjects.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (ост. ${Math.max(0, s.semGoal - s.semCurrent)} б.)</option>`).join('')
+        : '<option value="">Нет предметов с баллами</option>';
+
+      container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="card space-y-3">
+            <h2 class="text-base font-bold">Калькулятор добора баллов</h2>
+            <p class="text-xs text-slate-500">Посчитай, сколько баллов в неделю нужно набирать до конца семестра</p>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Предмет с баллами</label>
+              <select id="calc-subj" class="select" onchange="runPointsCalc()">${calcOptions}</select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Сколько недель осталось до зачёта/сессии</label>
+              <input type="number" id="calc-weeks" class="input" value="6" min="1" max="30" oninput="runPointsCalc()" />
+            </div>
+            <div id="calc-result" class="p-3 rounded-xl bg-blue-50 text-blue-900 text-sm font-medium"></div>
+          </div>
+
+          <div class="card space-y-3">
+            <h2 class="text-base font-bold">Блокнот и быстрые ссылки</h2>
+            <textarea class="textarea" rows="5" placeholder="Ссылки на СДО, расписание звонков, пароли..." oninput="state.notes=this.value; saveState();">${escapeHtml(state.notes || '')}</textarea>
+          </div>
+
+          <div class="card md:col-span-2 space-y-3">
+            <h2 class="text-base font-bold">Резервная копия данных</h2>
+            <p class="text-xs text-slate-500">Все данные хранятся в браузере этого устройства. Скачай копию, чтобы перенести её на другое устройство или сохранить перед очисткой браузера.</p>
+            <div class="flex flex-wrap gap-2">
+              <button class="btn btn-primary" onclick="exportData()">⬇ Скачать резервную копию (JSON)</button>
+              <label class="btn btn-secondary cursor-pointer">
+                ⬆ Восстановить из файла
+                <input type="file" accept=".json" class="hidden" onchange="importData(event)" />
+              </label>
+            </div>
+          </div>
+        </div>
+      `;
+      runPointsCalc();
+    }
+
+    function runPointsCalc() {
+      const resEl = document.getElementById('calc-result');
+      const subjEl = document.getElementById('calc-subj');
+      const weeksEl = document.getElementById('calc-weeks');
+      if (!resEl || !subjEl || !weeksEl) return;
+
+      const subj = state.subjects.find(s => s.id === subjEl.value);
+      const weeks = Math.max(1, parseInt(weeksEl.value, 10) || 1);
+      if (!subj) {
+        resEl.textContent = 'Включи учёт баллов хотя бы у одного предмета (например, у физры).';
+        return;
+      }
+      const rem = Math.max(0, subj.semGoal - subj.semCurrent);
+      const perWeek = (rem / weeks).toFixed(1);
+      resEl.innerHTML = rem === 0
+        ? `Цель на семестр (${subj.semGoal} б.) уже закрыта!`
+        : `До цели не хватает <strong>${rem} б.</strong> — нужно набирать примерно <strong>${perWeek} б. в неделю</strong>.`;
+    }
+
+    // --- Модалки и действия с предметами ---
+    function togglePointsFields() {
+      const checked = document.getElementById('subj-track-points').checked;
+      document.getElementById('points-fields-wrapper').classList.toggle('hidden', !checked);
+    }
+
+    function openSubjectModal(subjId = null) {
+      const modal = document.getElementById('modal-subject');
+      const title = document.getElementById('subject-modal-title');
+      const delBtn = document.getElementById('btn-delete-subject');
+
+      if (subjId) {
+        const s = state.subjects.find(item => item.id === subjId);
+        if (!s) return;
+        title.textContent = 'Редактировать предмет';
+        document.getElementById('subj-id').value = s.id;
+        document.getElementById('subj-name').value = s.name;
+        document.getElementById('subj-teacher').value = s.teacher || '';
+        document.getElementById('subj-max-absences').value = s.maxAbsences;
+        document.getElementById('subj-track-points').checked = !!s.trackPoints;
+        document.getElementById('subj-sem-current').value = s.semCurrent;
+        document.getElementById('subj-sem-goal').value = s.semGoal;
+        document.getElementById('subj-total-current').value = s.totalCurrent;
+        document.getElementById('subj-total-goal').value = s.totalGoal;
+        document.getElementById('subj-points-per-visit').value = s.pointsPerVisit;
+        delBtn.classList.remove('hidden');
+      } else {
+        title.textContent = 'Новый предмет';
+        document.getElementById('subj-id').value = '';
+        document.getElementById('subj-name').value = '';
+        document.getElementById('subj-teacher').value = '';
+        document.getElementById('subj-max-absences').value = 3;
+        document.getElementById('subj-track-points').checked = false;
+        document.getElementById('subj-sem-current').value = 0;
+        document.getElementById('subj-sem-goal').value = 50;
+        document.getElementById('subj-total-current').value = 0;
+        document.getElementById('subj-total-goal').value = 300;
+        document.getElementById('subj-points-per-visit').value = 2;
+        delBtn.classList.add('hidden');
+      }
+
+      togglePointsFields();
+      modal.classList.remove('hidden');
+    }
+
+    function saveSubject(e) {
+      e.preventDefault();
+      const id = document.getElementById('subj-id').value;
+      const data = {
+        name: document.getElementById('subj-name').value.trim(),
+        teacher: document.getElementById('subj-teacher').value.trim(),
+        maxAbsences: parseInt(document.getElementById('subj-max-absences').value, 10) || 3,
+        trackPoints: document.getElementById('subj-track-points').checked,
+        semCurrent: parseFloat(document.getElementById('subj-sem-current').value) || 0,
+        semGoal: parseFloat(document.getElementById('subj-sem-goal').value) || 50,
+        totalCurrent: parseFloat(document.getElementById('subj-total-current').value) || 0,
+        totalGoal: parseFloat(document.getElementById('subj-total-goal').value) || 300,
+        pointsPerVisit: parseFloat(document.getElementById('subj-points-per-visit').value) || 0
+      };
+
+      if (id) {
+        const idx = state.subjects.findIndex(s => s.id === id);
+        if (idx !== -1) state.subjects[idx] = { ...state.subjects[idx], ...data };
+      } else {
+        state.subjects.push({
+          id: 'subj-' + Date.now(),
+          ...data,
+          pointsLog: []
+        });
+      }
+
+      saveState();
+      closeModal('modal-subject');
+      render();
+    }
+
+    function deleteCurrentSubject() {
+      const id = document.getElementById('subj-id').value;
+      if (!id || !confirm('Удалить этот предмет и связанные с ним отметки?')) return;
+      state.subjects = state.subjects.filter(s => s.id !== id);
+      state.attendance = state.attendance.filter(a => a.subjectId !== id);
+      state.homework = state.homework.filter(h => h.subjectId !== id);
+      saveState();
+      closeModal('modal-subject');
+      render();
+    }
+
+    // --- Баллы ---
+    function quickAddPoints(subjId, amount) {
+      const s = state.subjects.find(item => item.id === subjId);
+      if (!s) return;
+      s.semCurrent = Math.max(0, Number((s.semCurrent + amount).toFixed(2)));
+      s.totalCurrent = Math.max(0, Number((s.totalCurrent + amount).toFixed(2)));
+      s.pointsLog = s.pointsLog || [];
+      s.pointsLog.unshift({
+        date: new Date().toISOString().split('T')[0],
+        amount,
+        note: 'Быстрое начисление'
+      });
+      saveState();
+      render();
+    }
+
+    function openPointsModal(subjId) {
+      const s = state.subjects.find(item => item.id === subjId);
+      if (!s) return;
+      document.getElementById('points-modal-title').textContent = `Баллы: ${s.name}`;
+      document.getElementById('pts-subj-id').value = s.id;
+      document.getElementById('pts-amount').value = '';
+      document.getElementById('pts-note').value = '';
+      document.getElementById('modal-points').classList.remove('hidden');
+    }
+
+    function submitPointsChange(e) {
+      e.preventDefault();
+      const subjId = document.getElementById('pts-subj-id').value;
+      const amount = parseFloat(document.getElementById('pts-amount').value);
+      const note = document.getElementById('pts-note').value.trim() || 'Изменение баллов';
+      const syncTotal = document.getElementById('pts-sync-total').checked;
+
+      const s = state.subjects.find(item => item.id === subjId);
+      if (!s || isNaN(amount)) return;
+
+      s.semCurrent = Math.max(0, Number((s.semCurrent + amount).toFixed(2)));
+      if (syncTotal) {
+        s.totalCurrent = Math.max(0, Number((s.totalCurrent + amount).toFixed(2)));
+      }
+      s.pointsLog = s.pointsLog || [];
+      s.pointsLog.unshift({
+        date: new Date().toISOString().split('T')[0],
+        amount,
+        note
+      });
+
+      saveState();
+      closeModal('modal-points');
+      render();
+    }
+
+    // --- Посещаемость ---
+    function quickMarkAttendance(subjId, status) {
+      const today = new Date().toISOString().split('T')[0];
+      state.attendance.push({
+        id: 'att-' + Date.now(),
+        subjectId: subjId,
+        date: today,
+        status
+      });
+
+      if (status === 'present') {
+        const s = state.subjects.find(item => item.id === subjId);
+        if (s && s.trackPoints && s.pointsPerVisit > 0) {
+          s.semCurrent = Number((s.semCurrent + s.pointsPerVisit).toFixed(2));
+          s.totalCurrent = Number((s.totalCurrent + s.pointsPerVisit).toFixed(2));
+        }
+      }
+
+      saveState();
+      render();
+    }
+
+    function addAttendanceRecord(e) {
+      e.preventDefault();
+      const subjId = document.getElementById('att-subj').value;
+      const date = document.getElementById('att-date').value;
+      const status = document.getElementById('att-status').value;
+
+      state.attendance.push({
+        id: 'att-' + Date.now(),
+        subjectId: subjId,
+        date,
+        status
+      });
+
+      if (status === 'present') {
+        const s = state.subjects.find(item => item.id === subjId);
+        if (s && s.trackPoints && s.pointsPerVisit > 0) {
+          s.semCurrent = Number((s.semCurrent + s.pointsPerVisit).toFixed(2));
+          s.totalCurrent = Number((s.totalCurrent + s.pointsPerVisit).toFixed(2));
+        }
+      }
+
+      saveState();
+      render();
+    }
+
+    function deleteAttendance(id) {
+      state.attendance = state.attendance.filter(a => a.id !== id);
+      saveState();
+      render();
+    }
+
+    // --- ДЗ ---
+    function openHwModal() {
+      const sel = document.getElementById('hw-subj-id');
+      sel.innerHTML = state.subjects.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+      document.getElementById('hw-title').value = '';
+      document.getElementById('hw-deadline').value = '';
+      document.getElementById('hw-notes').value = '';
+      document.getElementById('modal-hw').classList.remove('hidden');
+    }
+
+    function saveHomework(e) {
+      e.preventDefault();
+      const notesRaw = document.getElementById('hw-notes').value.trim();
+      const subtasks = notesRaw
+        ? notesRaw.split('\n').map(line => line.trim()).filter(Boolean).map(text => ({ text, done: false }))
+        : [];
+
+      state.homework.unshift({
+        id: 'hw-' + Date.now(),
+        subjectId: document.getElementById('hw-subj-id').value,
+        title: document.getElementById('hw-title').value.trim(),
+        deadline: document.getElementById('hw-deadline').value,
+        priority: document.getElementById('hw-priority').value,
+        done: false,
+        subtasks
+      });
+
+      saveState();
+      closeModal('modal-hw');
+      render();
+    }
+
+    function toggleHwDone(id) {
+      const hw = state.homework.find(h => h.id === id);
+      if (hw) {
+        hw.done = !hw.done;
+        saveState();
+        render();
+      }
+    }
+
+    function toggleSubtask(hwId, idx) {
+      const hw = state.homework.find(h => h.id === hwId);
+      if (hw && hw.subtasks[idx]) {
+        hw.subtasks[idx].done = !hw.subtasks[idx].done;
+        saveState();
+        render();
+      }
+    }
+
+    function deleteHw(id) {
+      state.homework = state.homework.filter(h => h.id !== id);
+      saveState();
+      render();
+    }
+
+    // --- Экспорт / Импорт и утилиты ---
+    function exportData() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `univer-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (parsed && Array.isArray(parsed.subjects)) {
+            state = parsed;
+            saveState();
+            render();
+            alert('Данные успешно восстановлены!');
+          } else {
+            alert('Неверный формат файла резервной копии.');
+          }
+        } catch (err) {
+          alert('Ошибка при чтении файла.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function closeModalOnBackdrop(e, id) {
+      if (e.target.id === id) closeModal(id);
+    }
+
+    // Первый запуск
+    render();
+  </script>
+</body>
+</html>
